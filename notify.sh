@@ -2,7 +2,7 @@
 # Reads Claude Code hook JSON from stdin and sends a desktop notification
 # Usage: notify.sh <event_type>
 # For permission requests, shows Allow/Always/View buttons that send keystrokes to Terminal
-# Supports: Terminal.app, Warp, iTerm2, VS Code
+# Supports: Terminal.app, Warp, iTerm2
 
 EVENT="$1"
 INPUT=$(cat)
@@ -20,6 +20,10 @@ case "${TERM_PROGRAM:-}" in
   vscode)
     APP_NAME="Code"
     BUNDLE_ID="com.microsoft.VSCode"
+    ;;
+  cursor)
+    APP_NAME="Cursor"
+    BUNDLE_ID="com.todesktop.230313mzl4w4u92"
     ;;
   *)
     APP_NAME="Terminal"

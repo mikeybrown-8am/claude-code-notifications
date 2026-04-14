@@ -15,7 +15,8 @@ Clicking any notification brings your terminal to focus.
 - **Terminal.app** -- full support including tab targeting by TTY
 - **Warp** -- activate + keystroke
 - **iTerm2** -- activate + keystroke
-- **VS Code** -- activate + keystroke (integrated terminal)
+- **VS Code** integrated terminal -- activate + keystroke
+- **Cursor** integrated terminal -- activate + keystroke
 
 The terminal is auto-detected via `$TERM_PROGRAM`.
 
