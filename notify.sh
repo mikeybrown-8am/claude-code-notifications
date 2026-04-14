@@ -51,14 +51,40 @@ EOF
 }
 
 send_keystroke() {
-  focus_tab
-  osascript <<EOF
+  # Send keystroke to the correct terminal tab, then return to previous app
+  if [ "$APP_NAME" = "Terminal" ]; then
+    osascript <<EOF
+set prevApp to path to frontmost application as text
+tell application "Terminal"
+  repeat with w in windows
+    repeat with t in tabs of w
+      if tty of t is "$CLAUDE_TTY" then
+        set selected of t to true
+        set index of w to 1
+      end if
+    end repeat
+  end repeat
+  activate
+end tell
+tell application "System Events"
+  tell process "Terminal"
+    keystroke "$1"
+  end tell
+end tell
+activate application prevApp
+EOF
+  else
+    osascript <<EOF
+set prevApp to path to frontmost application as text
+tell application "$APP_NAME" to activate
 tell application "System Events"
   tell process "$APP_NAME"
     keystroke "$1"
   end tell
 end tell
+activate application prevApp
 EOF
+  fi
 }
 
 case "$EVENT" in
