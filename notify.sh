@@ -1,17 +1,35 @@
 #!/bin/bash
 # Reads Claude Code hook JSON from stdin and sends a desktop notification
 # Usage: notify.sh <event_type>
-# For permission requests, shows Allow/Deny buttons that send keystrokes to Terminal
+# For permission requests, shows Allow/Always/View buttons that send keystrokes to Terminal
+# Supports: Terminal.app, Warp, iTerm2
 
 EVENT="$1"
 INPUT=$(cat)
 
+# Detect terminal app
+case "${TERM_PROGRAM:-}" in
+  WarpTerminal)
+    APP_NAME="Warp"
+    BUNDLE_ID="dev.warp.Warp-Stable"
+    ;;
+  iTerm.app|iTerm2)
+    APP_NAME="iTerm2"
+    BUNDLE_ID="com.googlecode.iterm2"
+    ;;
+  *)
+    APP_NAME="Terminal"
+    BUNDLE_ID="com.apple.Terminal"
+    ;;
+esac
+
 CLAUDE_TTY="/dev/$(ps -o tty= -p $PPID 2>/dev/null | tr -d ' ')"
 
-send_keystroke() {
-  osascript <<EOF
+focus_tab() {
+  if [ "$APP_NAME" = "Terminal" ]; then
+    # Terminal.app supports finding tabs by TTY
+    osascript <<EOF
 tell application "Terminal"
-  -- Find and focus the tab running Claude Code
   repeat with w in windows
     repeat with t in tabs of w
       if tty of t is "$CLAUDE_TTY" then
@@ -22,8 +40,17 @@ tell application "Terminal"
   end repeat
   activate
 end tell
+EOF
+  else
+    osascript -e "tell application \"$APP_NAME\" to activate"
+  fi
+}
+
+send_keystroke() {
+  focus_tab
+  osascript <<EOF
 tell application "System Events"
-  tell process "Terminal"
+  tell process "$APP_NAME"
     keystroke "$1"
   end tell
 end tell
@@ -38,7 +65,7 @@ data = json.load(sys.stdin)
 reason = data.get('stop_reason', data.get('stopReason', 'done'))
 print(f'Finished ({reason})')
 " 2>/dev/null || echo "Ready for input")
-    terminal-notifier -message "$MSG" -title "Claude Code" -sound Glass -activate com.apple.Terminal
+    terminal-notifier -message "$MSG" -title "Claude Code" -sound Glass -activate "$BUNDLE_ID"
     ;;
 
   permission)
@@ -65,20 +92,7 @@ print(f'{tool}: {desc}')
     elif echo "$RESPONSE" | grep -q "Always"; then
       send_keystroke "2"
     elif echo "$RESPONSE" | grep -q "View"; then
-      # Just focus the correct Terminal tab, no keystroke
-      osascript <<EOF
-tell application "Terminal"
-  repeat with w in windows
-    repeat with t in tabs of w
-      if tty of t is "$CLAUDE_TTY" then
-        set selected of t to true
-        set index of w to 1
-      end if
-    end repeat
-  end repeat
-  activate
-end tell
-EOF
+      focus_tab
     fi
     ;;
 
@@ -91,10 +105,10 @@ if len(msg) > 120:
     msg = msg[:120] + '...'
 print(msg)
 " 2>/dev/null || echo "Has a question")
-    terminal-notifier -message "$MSG" -title "Claude Code" -sound Glass -activate com.apple.Terminal
+    terminal-notifier -message "$MSG" -title "Claude Code" -sound Glass -activate "$BUNDLE_ID"
     ;;
 
   *)
-    terminal-notifier -message "Needs attention" -title "Claude Code" -sound Glass -activate com.apple.Terminal
+    terminal-notifier -message "Needs attention" -title "Claude Code" -sound Glass -activate "$BUNDLE_ID"
     ;;
 esac

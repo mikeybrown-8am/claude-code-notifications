@@ -6,15 +6,17 @@ Desktop notifications for Claude Code with actionable permission buttons.
 
 - **Stop** -- notification when Claude finishes responding
 - **Elicitation** -- notification when Claude asks a question
-- **Permission Request** -- popup with **Allow**, **Always**, and **View** buttons that send the keystroke directly to the correct Terminal tab
+- **Permission Request** -- popup with **Allow**, **Always**, and **View** buttons that send the keystroke directly to the correct terminal tab
 
-Clicking any notification brings Terminal.app to focus.
+Clicking any notification brings your terminal to focus.
 
-## Requirements
+## Supported Terminals
 
-- macOS
-- Terminal.app
-- [Homebrew](https://brew.sh)
+- **Terminal.app** -- full support including tab targeting by TTY
+- **Warp** -- activate + keystroke
+- **iTerm2** -- activate + keystroke
+
+The terminal is auto-detected via `$TERM_PROGRAM`.
 
 ## Install
 
@@ -32,13 +34,29 @@ bash setup.sh
 
 Then restart Claude Code.
 
+## Reinstall / Update
+
+Run the same install command again. It will overwrite `notify.sh` and update your hooks.
+
+## Uninstall
+
+```bash
+bash <(curl -sL https://raw.githubusercontent.com/mikeybrown-8am/claude-code-notifications/main/uninstall.sh)
+```
+
+Or if you cloned the repo:
+
+```bash
+bash uninstall.sh
+```
+
 ## Post-install
 
-You must enable **Terminal** in:
+Your terminal app must be enabled in:
 
 **System Settings > Privacy & Security > Accessibility**
 
-This allows the permission buttons to send keystrokes to Terminal.
+This allows the permission buttons to send keystrokes to your terminal.
 
 ## What it installs
 
@@ -47,12 +65,3 @@ This allows the permission buttons to send keystrokes to Terminal.
 - Hook entries in `~/.claude/settings.json` for `Stop`, `PermissionRequest`, and `Elicitation` events
 
 Existing hooks in your `settings.json` are preserved.
-
-## Uninstall
-
-Remove the `Stop`, `PermissionRequest`, and `Elicitation` entries from `~/.claude/settings.json`, then:
-
-```bash
-rm ~/.claude/hooks/notify.sh
-brew uninstall terminal-notifier  # optional
-```
