@@ -105,13 +105,16 @@ data = json.load(sys.stdin)
 tool = data.get('tool_name', 'unknown tool')
 tool_input = data.get('tool_input', {})
 if tool == 'Bash':
-    desc = tool_input.get('description', tool_input.get('command', ''))
+    cmd = tool_input.get('command', '')
+    description = tool_input.get('description', '')
+    if description:
+        desc = f'{description}\n\n{cmd}'
+    else:
+        desc = cmd
 elif tool in ('Edit', 'Write', 'Read'):
     desc = tool_input.get('file_path', '')
 else:
     desc = json.dumps(tool_input)
-if len(desc) > 100:
-    desc = desc[:100] + '...'
 print(f'{tool}: {desc}')
 " 2>/dev/null || echo "Needs permission")
 
