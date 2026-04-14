@@ -1,4 +1,6 @@
-# Claude Code Desktop Notifications (macOS)
+# Claude Code Desktop Notifications (macOS) 
+
+<img width="262" height="278" alt="Screenshot 2026-04-14 at 3 09 16 PM" src="https://github.com/user-attachments/assets/71711e8f-b64d-49b8-bffc-03dc19a7b622" />
 
 Desktop notifications for Claude Code with actionable permission buttons.
 
