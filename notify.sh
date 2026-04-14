@@ -21,10 +21,6 @@ case "${TERM_PROGRAM:-}" in
     APP_NAME="Code"
     BUNDLE_ID="com.microsoft.VSCode"
     ;;
-  cursor)
-    APP_NAME="Cursor"
-    BUNDLE_ID="com.todesktop.230313mzl4w4u92"
-    ;;
   *)
     APP_NAME="Terminal"
     BUNDLE_ID="com.apple.Terminal"

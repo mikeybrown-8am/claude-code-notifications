@@ -16,7 +16,6 @@ Clicking any notification brings your terminal to focus.
 - **Warp** -- activate + keystroke
 - **iTerm2** -- activate + keystroke
 - **VS Code** integrated terminal -- activate + keystroke
-- **Cursor** integrated terminal -- activate + keystroke
 
 The terminal is auto-detected via `$TERM_PROGRAM`.
 
