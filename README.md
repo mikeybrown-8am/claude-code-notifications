@@ -1,14 +1,12 @@
-# Claude Code Desktop Notifications (macOS) 
+# Claude Code Permission Alerts (macOS) 
 
-<img width="262" height="278" alt="Screenshot 2026-04-14 at 3 09 16 PM" src="https://github.com/user-attachments/assets/71711e8f-b64d-49b8-bffc-03dc19a7b622" />
+<img width="262" height="278" alt="Screenshot 2026-04-14 at 3 09 16 PM" src="https://github.com/user-attachments/assets/71711e8f-b64d-49b8-bffc-03dc19a7b622" />
 
-Desktop notifications for Claude Code with actionable permission buttons.
+When Claude Code needs permission, get a native macOS alert with **Allow**, **Always**, and **View** buttons -- no need to switch back to your terminal.
 
-- **Stop** -- notification when Claude finishes responding
-- **Elicitation** -- notification when Claude asks a question
-- **Permission Request** -- popup with **Allow**, **Always**, and **View** buttons that send the keystroke directly to the correct terminal tab
-
-Clicking any notification brings your terminal to focus.
+- **Allow** -- approves once, sends keystroke to the correct terminal tab
+- **Always** -- shows what it will always allow (e.g. "Always allow Read /tmp/**")
+- **View** -- switches to the terminal so you can decide there
 
 ## Supported Terminals
 
@@ -61,14 +59,7 @@ This allows the permission buttons to send keystrokes to your terminal.
 
 ## What it installs
 
-- `terminal-notifier` via Homebrew (for banner notifications)
-- `~/.claude/hooks/notify.sh` (notification handler script)
-- Hook entries in `~/.claude/settings.json` for `Stop`, `PermissionRequest`, and `Elicitation` events
+- `~/.claude/hooks/notify.sh` (alert handler script)
+- `PermissionRequest` hook entry in `~/.claude/settings.json`
 
 Existing hooks in your `settings.json` are preserved.
-
-## Troubleshooting
-
-**"Invalid key in record" / unsupported hook error**
-
-Older versions of Claude Code may not support all hook events (e.g. `Elicitation`). Remove the unsupported entry from `~/.claude/settings.json` and update Claude Code to the latest version.

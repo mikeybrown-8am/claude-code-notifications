@@ -88,16 +88,6 @@ EOF
 }
 
 case "$EVENT" in
-  stop)
-    MSG=$(echo "$INPUT" | /usr/bin/python3 -c "
-import sys, json
-data = json.load(sys.stdin)
-reason = data.get('stop_reason', data.get('stopReason', 'done'))
-print(f'Finished ({reason})')
-" 2>/dev/null || echo "Ready for input")
-    terminal-notifier -message "$MSG" -title "Claude Code" -sound Glass -activate "$BUNDLE_ID"
-    ;;
-
   permission)
     PARSED=$(echo "$INPUT" | /usr/bin/python3 -c "
 import sys, json
@@ -158,19 +148,7 @@ print(j.dumps({'msg': f'{tool}: {desc}', 'always': always}))
     fi
     ;;
 
-  elicitation)
-    MSG=$(echo "$INPUT" | /usr/bin/python3 -c "
-import sys, json
-data = json.load(sys.stdin)
-msg = data.get('message', data.get('question', 'Has a question'))
-if len(msg) > 120:
-    msg = msg[:120] + '...'
-print(msg)
-" 2>/dev/null || echo "Has a question")
-    terminal-notifier -message "$MSG" -title "Claude Code" -sound Glass -activate "$BUNDLE_ID"
-    ;;
-
   *)
-    terminal-notifier -message "Needs attention" -title "Claude Code" -sound Glass -activate "$BUNDLE_ID"
+    # No notification for other events
     ;;
 esac

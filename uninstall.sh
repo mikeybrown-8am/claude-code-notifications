@@ -27,7 +27,7 @@ with open(settings_path) as f:
 hooks = settings.get("hooks", {})
 removed = []
 
-for event in ["Stop", "PermissionRequest", "Elicitation"]:
+for event in ["Stop", "PermissionRequest", "Elicitation"]:  # remove all, including legacy
     if event in hooks:
         # Only remove if it's our notify.sh hook
         entries = hooks[event]

@@ -2,13 +2,11 @@
 # Claude Code Desktop Notifications Setup (macOS)
 #
 # What this does:
-#   - Notification when Claude finishes responding
-#   - Notification when Claude asks a question
 #   - Permission requests show a popup with Allow / Always / View buttons
 #     that send the keystroke back to the correct terminal tab
 #
 # Supports: Terminal.app, Warp, iTerm2
-# Requirements: macOS, Homebrew
+# Requirements: macOS
 # Accessibility: Your terminal must be enabled in System Settings > Privacy & Security > Accessibility
 
 set -e
@@ -17,14 +15,6 @@ HOOKS_DIR="$HOME/.claude/hooks"
 SETTINGS="$HOME/.claude/settings.json"
 SCRIPT="$HOOKS_DIR/notify.sh"
 REPO_URL="https://raw.githubusercontent.com/mikeybrown-8am/claude-code-notifications/main"
-
-# --- Install terminal-notifier ---
-if ! command -v terminal-notifier &>/dev/null; then
-  echo "Installing terminal-notifier..."
-  brew install terminal-notifier
-else
-  echo "terminal-notifier already installed."
-fi
 
 # --- Create hooks directory ---
 mkdir -p "$HOOKS_DIR"
@@ -57,9 +47,7 @@ else:
 hooks = settings.setdefault("hooks", {})
 
 new_hooks = {
-    "Stop": [{"hooks": [{"type": "command", "command": f"{hook_script} stop", "async": True}]}],
     "PermissionRequest": [{"hooks": [{"type": "command", "command": f"{hook_script} permission", "async": True}]}],
-    "Elicitation": [{"hooks": [{"type": "command", "command": f"{hook_script} elicitation", "async": True}]}],
 }
 
 for event, config in new_hooks.items():
@@ -83,8 +71,6 @@ with open(settings_path, "w") as f:
 
 print(f"Updated {settings_path}")
 print()
-print("If Claude Code reports an unsupported hook (e.g. Elicitation),")
-print("remove that entry from ~/.claude/settings.json and update Claude Code.")
 PYTHON_EOF
 
 echo ""
