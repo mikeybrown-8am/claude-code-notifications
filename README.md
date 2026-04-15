@@ -66,3 +66,9 @@ This allows the permission buttons to send keystrokes to your terminal.
 - Hook entries in `~/.claude/settings.json` for `Stop`, `PermissionRequest`, and `Elicitation` events
 
 Existing hooks in your `settings.json` are preserved.
+
+## Troubleshooting
+
+**"Invalid key in record" / unsupported hook error**
+
+Older versions of Claude Code may not support all hook events (e.g. `Elicitation`). Remove the unsupported entry from `~/.claude/settings.json` and update Claude Code to the latest version.

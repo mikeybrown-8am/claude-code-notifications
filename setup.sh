@@ -82,6 +82,9 @@ with open(settings_path, "w") as f:
     f.write("\n")
 
 print(f"Updated {settings_path}")
+print()
+print("If Claude Code reports an unsupported hook (e.g. Elicitation),")
+print("remove that entry from ~/.claude/settings.json and update Claude Code.")
 PYTHON_EOF
 
 echo ""
