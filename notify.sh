@@ -133,10 +133,14 @@ print(j.dumps({'msg': f'{tool}: {desc}', 'always': always}))
     MSG=$(echo "$PARSED" | /usr/bin/python3 -c "import sys,json; print(json.load(sys.stdin)['msg'])" 2>/dev/null || echo "Needs permission")
     ALWAYS_LABEL=$(echo "$PARSED" | /usr/bin/python3 -c "import sys,json; print(json.load(sys.stdin)['always'])" 2>/dev/null || echo "")
 
+    # Escape double quotes and backslashes for osascript
+    MSG_ESC=$(echo "$MSG" | sed 's/\\/\\\\/g; s/"/\\"/g')
+    ALWAYS_ESC=$(echo "$ALWAYS_LABEL" | sed 's/\\/\\\\/g; s/"/\\"/g')
+
     if [ -n "$ALWAYS_LABEL" ]; then
-      RESPONSE=$(osascript -e "display alert \"Claude Code\" message \"$MSG\" buttons {\"View\", \"$ALWAYS_LABEL\", \"Allow\"} default button \"Allow\" giving up after 30" 2>&1)
+      RESPONSE=$(osascript -e "display alert \"Claude Code\" message \"$MSG_ESC\" buttons {\"View\", \"$ALWAYS_ESC\", \"Allow\"} default button \"Allow\" giving up after 30" 2>&1)
     else
-      RESPONSE=$(osascript -e "display alert \"Claude Code\" message \"$MSG\" buttons {\"View\", \"Allow\"} default button \"Allow\" giving up after 30" 2>&1)
+      RESPONSE=$(osascript -e "display alert \"Claude Code\" message \"$MSG_ESC\" buttons {\"View\", \"Allow\"} default button \"Allow\" giving up after 30" 2>&1)
     fi
 
     if echo "$RESPONSE" | grep -q "button returned:Allow"; then
