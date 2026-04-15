@@ -99,7 +99,7 @@ print(f'Finished ({reason})')
     ;;
 
   permission)
-    MSG=$(echo "$INPUT" | /usr/bin/python3 -c "
+    PARSED=$(echo "$INPUT" | /usr/bin/python3 -c "
 import sys, json
 data = json.load(sys.stdin)
 tool = data.get('tool_name', 'unknown tool')
@@ -115,16 +115,45 @@ elif tool in ('Edit', 'Write', 'Read'):
     desc = tool_input.get('file_path', '')
 else:
     desc = json.dumps(tool_input)
-print(f'{tool}: {desc}')
-" 2>/dev/null || echo "Needs permission")
 
-    RESPONSE=$(osascript -e "display alert \"Claude Code\" message \"$MSG\" buttons {\"View\", \"Always\", \"Allow\"} default button \"Allow\" giving up after 30" 2>&1)
+# Extract what 'Always' would allow from permission_suggestions
+always = ''
+suggestions = data.get('permission_suggestions', [])
+for s in suggestions:
+    stype = s.get('type', '')
+    if stype == 'addRules' and s.get('behavior') == 'allow':
+        rules = s.get('rules', [])
+        if rules:
+            r = rules[0]
+            tool_name = r.get('toolName', '')
+            rule = r.get('ruleContent', '')
+            if tool_name and rule:
+                rule = rule.replace('//', '/')
+                always = f'Always allow {tool_name} {rule}'
+            elif tool_name:
+                always = f'Always allow {tool_name}'
+if not always and suggestions:
+    always = 'Always'
 
-    if echo "$RESPONSE" | grep -q "button returned:Allow,"; then
+# JSON output so bash can parse both fields cleanly
+import json as j
+print(j.dumps({'msg': f'{tool}: {desc}', 'always': always}))
+" 2>/dev/null)
+
+    MSG=$(echo "$PARSED" | /usr/bin/python3 -c "import sys,json; print(json.load(sys.stdin)['msg'])" 2>/dev/null || echo "Needs permission")
+    ALWAYS_LABEL=$(echo "$PARSED" | /usr/bin/python3 -c "import sys,json; print(json.load(sys.stdin)['always'])" 2>/dev/null || echo "")
+
+    if [ -n "$ALWAYS_LABEL" ]; then
+      RESPONSE=$(osascript -e "display alert \"Claude Code\" message \"$MSG\" buttons {\"View\", \"$ALWAYS_LABEL\", \"Allow\"} default button \"Allow\" giving up after 30" 2>&1)
+    else
+      RESPONSE=$(osascript -e "display alert \"Claude Code\" message \"$MSG\" buttons {\"View\", \"Allow\"} default button \"Allow\" giving up after 30" 2>&1)
+    fi
+
+    if echo "$RESPONSE" | grep -q "button returned:Allow"; then
       send_keystroke "1"
-    elif echo "$RESPONSE" | grep -q "Always"; then
+    elif echo "$RESPONSE" | grep -q "button returned:Always"; then
       send_keystroke "2"
-    elif echo "$RESPONSE" | grep -q "View"; then
+    elif echo "$RESPONSE" | grep -q "button returned:View"; then
       focus_tab
     fi
     ;;
