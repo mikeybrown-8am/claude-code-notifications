@@ -2,7 +2,7 @@
 # Reads Claude Code hook JSON from stdin and sends a desktop notification
 # Usage: notify.sh <event_type>
 # For permission requests, shows Allow/Always/View buttons that send keystrokes to Terminal
-# Supports: Terminal.app, Warp, iTerm2, VS Code, kitty
+# Supported terminals: Terminal.app, Warp, iTerm2, VS Code, kitty
 
 EVENT="$1"
 INPUT=$(cat)
@@ -102,8 +102,47 @@ EOF
   fi
 }
 
+is_terminal_focused() {
+  local frontmost
+  frontmost=$(osascript -e 'tell application "System Events" to bundle identifier of first application process whose frontmost is true' 2>/dev/null)
+  [ "$frontmost" = "$BUNDLE_ID" ] || return 1
+
+  # kitty is frontmost, but Claude may be in a different pane/tab — check the specific window.
+  # Retry once on empty output: first `kitty @ ls` after idle can silently return nothing
+  # while auto-discovering the control socket.
+  if [ "$APP_NAME" = "kitty" ]; then
+    local kitty_out
+    kitty_out=$(kitty @ ls 2>/dev/null)
+    if [ -z "$kitty_out" ]; then
+      sleep 0.1
+      kitty_out=$(kitty @ ls 2>/dev/null)
+    fi
+    printf '%s' "$kitty_out" | KITTY_WINDOW_ID="$KITTY_WINDOW_ID" /usr/bin/python3 -c "
+import sys, json, os
+try:
+    data = json.load(sys.stdin)
+except Exception:
+    sys.exit(1)
+wanted = os.environ.get('KITTY_WINDOW_ID', '')
+for os_win in data:
+    for tab in os_win.get('tabs', []):
+        for w in tab.get('windows', []):
+            if str(w.get('id')) == wanted and w.get('is_focused'):
+                sys.exit(0)
+sys.exit(1)
+"
+    return $?
+  fi
+
+  return 0
+}
+
 case "$EVENT" in
   permission)
+    if is_terminal_focused; then
+      exit 0
+    fi
+
     PARSED=$(echo "$INPUT" | /usr/bin/python3 -c "
 import sys, json
 data = json.load(sys.stdin)
