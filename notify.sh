@@ -2,30 +2,36 @@
 # Reads Claude Code hook JSON from stdin and sends a desktop notification
 # Usage: notify.sh <event_type>
 # For permission requests, shows Allow/Always/View buttons that send keystrokes to Terminal
-# Supports: Terminal.app, Warp, iTerm2
+# Supports: Terminal.app, Warp, iTerm2, VS Code, kitty
 
 EVENT="$1"
 INPUT=$(cat)
 
 # Detect terminal app
-case "${TERM_PROGRAM:-}" in
-  WarpTerminal)
-    APP_NAME="Warp"
-    BUNDLE_ID="dev.warp.Warp-Stable"
-    ;;
-  iTerm.app|iTerm2)
-    APP_NAME="iTerm2"
-    BUNDLE_ID="com.googlecode.iterm2"
-    ;;
-  vscode)
-    APP_NAME="Code"
-    BUNDLE_ID="com.microsoft.VSCode"
-    ;;
-  *)
-    APP_NAME="Terminal"
-    BUNDLE_ID="com.apple.Terminal"
-    ;;
-esac
+# kitty doesn't set TERM_PROGRAM, so check its own env vars first
+if [ -n "${KITTY_WINDOW_ID:-}" ]; then
+  APP_NAME="kitty"
+  BUNDLE_ID="net.kovidgoyal.kitty"
+else
+  case "${TERM_PROGRAM:-}" in
+    WarpTerminal)
+      APP_NAME="Warp"
+      BUNDLE_ID="dev.warp.Warp-Stable"
+      ;;
+    iTerm.app|iTerm2)
+      APP_NAME="iTerm2"
+      BUNDLE_ID="com.googlecode.iterm2"
+      ;;
+    vscode)
+      APP_NAME="Code"
+      BUNDLE_ID="com.microsoft.VSCode"
+      ;;
+    *)
+      APP_NAME="Terminal"
+      BUNDLE_ID="com.apple.Terminal"
+      ;;
+  esac
+fi
 
 CLAUDE_TTY="/dev/$(ps -o tty= -p $PPID 2>/dev/null | tr -d ' ')"
 
@@ -45,6 +51,10 @@ tell application "Terminal"
   activate
 end tell
 EOF
+  elif [ "$APP_NAME" = "kitty" ]; then
+    # kitty remote control: focus the window containing the Claude process, then bring app forward
+    kitty @ focus-window --match "id:$KITTY_WINDOW_ID" 2>/dev/null
+    osascript -e 'tell application "kitty" to activate'
   else
     osascript -e "tell application \"$APP_NAME\" to activate"
   fi
@@ -52,6 +62,11 @@ EOF
 
 send_keystroke() {
   # Send keystroke to the correct terminal tab, then return to previous app
+  if [ "$APP_NAME" = "kitty" ]; then
+    # kitty remote control sends text directly to the matched window — no activation needed
+    kitty @ send-text --match "id:$KITTY_WINDOW_ID" "$1"
+    return
+  fi
   if [ "$APP_NAME" = "Terminal" ]; then
     osascript <<EOF
 set prevApp to path to frontmost application as text

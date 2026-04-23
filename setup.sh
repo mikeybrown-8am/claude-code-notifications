@@ -5,7 +5,7 @@
 #   - Permission requests show a popup with Allow / Always / View buttons
 #     that send the keystroke back to the correct terminal tab
 #
-# Supports: Terminal.app, Warp, iTerm2
+# Supports: Terminal.app, Warp, iTerm2, kitty
 # Requirements: macOS
 # Accessibility: Your terminal must be enabled in System Settings > Privacy & Security > Accessibility
 
@@ -79,3 +79,12 @@ echo ""
 echo "Note: Your terminal app must be enabled in:"
 echo "  System Settings > Privacy & Security > Accessibility"
 echo "for the permission buttons to send keystrokes."
+
+if [ -n "${KITTY_WINDOW_ID:-}" ] || command -v kitty >/dev/null 2>&1; then
+  echo ""
+  echo "kitty detected. To enable keystroke-sending, add to ~/.config/kitty/kitty.conf:"
+  echo ""
+  echo "  allow_remote_control yes"
+  echo ""
+  echo "Then fully restart kitty (config reload is not enough for this setting)."
+fi

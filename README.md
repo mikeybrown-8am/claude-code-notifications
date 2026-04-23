@@ -1,8 +1,8 @@
-# Claude Code Permission Alerts (macOS) 
+# Claude Code Permission Alerts (macOS)
 
 <img width="262" height="278" alt="Screenshot 2026-04-14 at 3 09 16 PM" src="https://github.com/user-attachments/assets/71711e8f-b64d-49b8-bffc-03dc19a7b622" />
 
-When Claude Code needs permission, get a native macOS alert with **Allow**, **Always**, and **View** buttons -- no need to switch back to your terminal.
+When Claude Code needs permission, get a native macOS alert with **Allow**, **Always**, and **View** buttons — no need to switch back to your terminal.
 
 - **Allow** -- approves once, sends keystroke to the correct terminal tab
 - **Always** -- shows what it will always allow (e.g. "Always allow Read /tmp/**")
@@ -14,8 +14,9 @@ When Claude Code needs permission, get a native macOS alert with **Allow**, **Al
 - **Warp** -- activate + keystroke
 - **iTerm2** -- activate + keystroke
 - **VS Code** integrated terminal -- activate + keystroke
+- **kitty** -- per-window keystroke via remote control (requires `allow_remote_control yes` in `kitty.conf`)
 
-The terminal is auto-detected via `$TERM_PROGRAM`.
+The terminal is auto-detected via `$TERM_PROGRAM` (or `$KITTY_WINDOW_ID` for kitty).
 
 ## Install
 
