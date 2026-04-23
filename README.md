@@ -14,8 +14,9 @@ When Claude Code needs permission, get a native macOS alert with **Allow**, **Al
 - **Warp** -- activate + keystroke
 - **iTerm2** -- activate + keystroke
 - **VS Code** integrated terminal -- activate + keystroke
+- **kitty** -- per-window keystroke via remote control (requires `allow_remote_control yes` in `kitty.conf`)
 
-The terminal is auto-detected via `$TERM_PROGRAM`.
+The terminal is auto-detected via `$TERM_PROGRAM` (or `$KITTY_WINDOW_ID` for kitty).
 
 ## Install
 
