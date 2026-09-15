@@ -2,14 +2,36 @@
 # Reads Claude Code hook JSON from stdin and sends a desktop notification
 # Usage: notify.sh <event_type>
 # For permission requests, shows Allow/Always/View buttons that send keystrokes to Terminal
-# Supported terminals: Terminal.app, Warp, iTerm2, VS Code, kitty
+# Supported terminals: Terminal.app, Warp, iTerm2, VS Code, kitty, Xirp/Chirp
 
 EVENT="$1"
 INPUT=$(cat)
 
 # Detect terminal app
+# The Xirp/Chirp desktop app runs each of its tabs as a tmux session named
+# `<edition>-<session-uuid>`, and sets TERM_PROGRAM=tmux -- so it has to be
+# detected from tmux, not from TERM_PROGRAM, or it falls through to Terminal.app
+# and every action lands in the wrong application.
+XIRP_SID=""
+XIRP_SCHEME=""
+XIRP_PANE=""
+if [ -n "${TMUX_PANE:-}" ] && command -v tmux >/dev/null 2>&1; then
+  TMUX_INFO=$(tmux display-message -p -t "$TMUX_PANE" '#S|#D' 2>/dev/null)
+  case "${TMUX_INFO%%|*}" in
+    xirp-*|chirp-*)
+      XIRP_SCHEME="${TMUX_INFO%%-*}"
+      XIRP_SID="${TMUX_INFO%%|*}"
+      XIRP_SID="${XIRP_SID#"$XIRP_SCHEME"-}"
+      XIRP_PANE="${TMUX_INFO##*|}"
+      ;;
+  esac
+fi
+
+if [ -n "$XIRP_SID" ]; then
+  APP_NAME="Xirp"
+  BUNDLE_ID="com.spotify.xirp"
 # kitty doesn't set TERM_PROGRAM, so check its own env vars first
-if [ -n "${KITTY_WINDOW_ID:-}" ]; then
+elif [ -n "${KITTY_WINDOW_ID:-}" ]; then
   APP_NAME="kitty"
   BUNDLE_ID="net.kovidgoyal.kitty"
 else
@@ -36,6 +58,12 @@ fi
 CLAUDE_TTY="/dev/$(ps -o tty= -p $PPID 2>/dev/null | tr -d ' ')"
 
 focus_tab() {
+  if [ -n "$XIRP_SID" ]; then
+    # The app's own `open-session` deep link raises the window (the main process
+    # runs app.focus({steal:true})) and selects the tab in one step.
+    open "$XIRP_SCHEME://local/?action=open-session&sessionId=$XIRP_SID"
+    return
+  fi
   if [ "$APP_NAME" = "Terminal" ]; then
     # Terminal.app supports finding tabs by TTY
     osascript <<EOF
@@ -60,8 +88,32 @@ EOF
   fi
 }
 
+# True while the target pane is still showing a Claude Code choice prompt.
+# Every permission dialog asks "Do you want to ...?" above a numbered option
+# list; requiring both keeps ordinary transcript text from matching.
+xirp_pane_awaiting_choice() {
+  local tail_text
+  tail_text=$(tmux capture-pane -p -t "$XIRP_PANE" -S -25 2>/dev/null) || return 1
+  printf '%s' "$tail_text" | grep -qE 'Do you want to ' || return 1
+  printf '%s' "$tail_text" | grep -qE '^[[:space:]]*.?[[:space:]]*2\.[[:space:]]' || return 1
+  return 0
+}
+
 send_keystroke() {
   # Send keystroke to the correct terminal tab, then return to previous app
+  if [ -n "$XIRP_SID" ]; then
+    # tmux addresses the pane that actually asked. System Events keystrokes
+    # would go to whichever tab is *visible*, which in a multi-tab window can
+    # answer a different session's prompt.
+    if xirp_pane_awaiting_choice; then
+      tmux send-keys -t "$XIRP_PANE" -l "$1" 2>/dev/null
+    else
+      # The prompt is gone (answered or timed out) -- typing the digit now would
+      # leave a stray character in the composer, so just show the tab instead.
+      focus_tab
+    fi
+    return
+  fi
   if [ "$APP_NAME" = "kitty" ]; then
     # kitty remote control sends text directly to the matched window — no activation needed
     kitty @ send-text --match "id:$KITTY_WINDOW_ID" "$1"
@@ -103,6 +155,14 @@ EOF
 }
 
 is_terminal_focused() {
+  # Xirp keeps many tabs in one window and exposes no "which tab is visible"
+  # signal, so being frontmost does not mean the asking tab is on screen.
+  # Notifying always is the safe side of that trade: the cost is one dismissible
+  # alert, where guessing wrong costs a missed permission prompt.
+  if [ -n "$XIRP_SID" ]; then
+    return 1
+  fi
+
   local frontmost
   frontmost=$(osascript -e 'tell application "System Events" to bundle identifier of first application process whose frontmost is true' 2>/dev/null)
   [ "$frontmost" = "$BUNDLE_ID" ] || return 1
