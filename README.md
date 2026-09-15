@@ -15,8 +15,30 @@ When Claude Code needs permission, get a native macOS alert with **Allow**, **Al
 - **iTerm2** -- activate + keystroke
 - **VS Code** integrated terminal -- activate + keystroke
 - **kitty** -- per-window keystroke via remote control (requires `allow_remote_control yes` in `kitty.conf`)
+- **Xirp / Chirp** desktop app -- per-tab targeting via the app's deep link and tmux
 
-The terminal is auto-detected via `$TERM_PROGRAM` (or `$KITTY_WINDOW_ID` for kitty).
+The terminal is auto-detected via `$TERM_PROGRAM` (or `$KITTY_WINDOW_ID` for kitty,
+or the tmux session name for Xirp/Chirp).
+
+### Xirp / Chirp
+
+The desktop app sets `TERM_PROGRAM=tmux`, so it cannot be detected the usual way --
+without special handling it falls through to the Terminal.app branch and every
+button acts on the wrong application. Each of its tabs is a tmux session named
+`xirp-<session-uuid>` (or `chirp-<session-uuid>`), which is what identifies the tab:
+
+- **View** opens `xirp://local/?action=open-session&sessionId=<uuid>`. The app's own
+  deep-link handler raises the window and selects that tab in one step.
+- **Allow** / **Always** go to the asking pane with `tmux send-keys`, never through
+  System Events. In a window holding many tabs, a keystroke sent to the *application*
+  lands in whichever tab is visible -- which can answer a different session's prompt.
+  Before sending, the pane is checked for a live dialog; if the prompt is already gone
+  the tab is shown instead of typing a stray digit into the composer.
+
+Unlike the other terminals, alerts are **not** suppressed while the app is frontmost.
+Xirp keeps many tabs in one window and exposes no "which tab is visible" signal, so
+frontmost does not imply the asking tab is on screen; the cost of notifying anyway is
+one dismissible alert, where guessing wrong costs a missed permission prompt.
 
 ## Install
 
@@ -57,6 +79,8 @@ Your terminal app must be enabled in:
 **System Settings > Privacy & Security > Accessibility**
 
 This allows the permission buttons to send keystrokes to your terminal.
+(Not needed for Xirp/Chirp or kitty -- both deliver keystrokes over their own
+channel rather than through System Events.)
 
 ## What it installs
 

@@ -5,7 +5,7 @@
 #   - Permission requests show a popup with Allow / Always / View buttons
 #     that send the keystroke back to the correct terminal tab
 #
-# Supports: Terminal.app, Warp, iTerm2, kitty
+# Supports: Terminal.app, Warp, iTerm2, kitty, Xirp/Chirp
 # Requirements: macOS
 # Accessibility: Your terminal must be enabled in System Settings > Privacy & Security > Accessibility
 
@@ -79,6 +79,19 @@ echo ""
 echo "Note: Your terminal app must be enabled in:"
 echo "  System Settings > Privacy & Security > Accessibility"
 echo "for the permission buttons to send keystrokes."
+
+# Xirp/Chirp tabs are tmux sessions named `<edition>-<session-uuid>`.
+if [ -n "${TMUX_PANE:-}" ] && command -v tmux >/dev/null 2>&1; then
+  case "$(tmux display-message -p -t "$TMUX_PANE" '#S' 2>/dev/null)" in
+    xirp-*|chirp-*)
+      echo ""
+      echo "Xirp/Chirp detected. Nothing else to configure -- buttons reach the asking"
+      echo "tab over the app's deep link and tmux, so no Accessibility permission is"
+      echo "needed. Alerts are not suppressed while the app is frontmost, because a"
+      echo "window can hold many tabs."
+      ;;
+  esac
+fi
 
 if [ -n "${KITTY_WINDOW_ID:-}" ] || command -v kitty >/dev/null 2>&1; then
   echo ""
