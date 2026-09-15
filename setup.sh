@@ -4,6 +4,7 @@
 # What this does:
 #   - Permission requests show a popup with Allow / Always / View buttons
 #     that send the keystroke back to the correct terminal tab
+#   - Interview questions (Elicitation) show a popup with a View button
 #
 # Supports: Terminal.app, Warp, iTerm2, kitty
 # Requirements: macOS
@@ -48,7 +49,19 @@ hooks = settings.setdefault("hooks", {})
 
 new_hooks = {
     "PermissionRequest": [{"hooks": [{"type": "command", "command": f"{hook_script} permission", "async": True}]}],
+    "Elicitation": [{"hooks": [{"type": "command", "command": f"{hook_script} elicitation", "async": True}]}],
 }
+
+# Installs from before the banner removal left a `Stop` entry pointing at this
+# script, which no longer handles that event. It notifies on nothing but still
+# runs on every turn, and it makes users think the tool notifies on completion.
+stale = [e for e in hooks.get("Stop", [])
+         if any("notify.sh" in h.get("command", "") for h in e.get("hooks", []))]
+if stale:
+    hooks["Stop"] = [e for e in hooks["Stop"] if e not in stale]
+    if not hooks["Stop"]:
+        del hooks["Stop"]
+    print("  Removed legacy Stop hook (no longer used)")
 
 for event, config in new_hooks.items():
     if event not in hooks:

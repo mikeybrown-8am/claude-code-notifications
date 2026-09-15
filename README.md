@@ -2,11 +2,17 @@
 
 <img width="262" height="278" alt="Screenshot 2026-04-14 at 3 09 16 PM" src="https://github.com/user-attachments/assets/71711e8f-b64d-49b8-bffc-03dc19a7b622" />
 
-When Claude Code needs permission, get a native macOS alert with **Allow**, **Always**, and **View** buttons -- no need to switch back to your terminal.
+When Claude Code needs you, get a native macOS alert -- no need to switch back to your terminal.
+
+**Permission requests** get **Allow**, **Always**, and **View**:
 
 - **Allow** -- approves once, sends keystroke to the correct terminal tab
 - **Always** -- shows what it will always allow (e.g. "Always allow Read /tmp/**")
 - **View** -- switches to the terminal so you can decide there
+
+**Interview questions** (`AskUserQuestion`) get **View**, since the answer has to be
+given in the terminal. Alerts fire only when Claude is actually blocked on you --
+never when a turn merely finishes.
 
 ## Supported Terminals
 
@@ -61,6 +67,6 @@ This allows the permission buttons to send keystrokes to your terminal.
 ## What it installs
 
 - `~/.claude/hooks/notify.sh` (alert handler script)
-- `PermissionRequest` hook entry in `~/.claude/settings.json`
+- `PermissionRequest` and `Elicitation` hook entries in `~/.claude/settings.json`
 
 Existing hooks in your `settings.json` are preserved.

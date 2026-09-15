@@ -2,6 +2,7 @@
 # Reads Claude Code hook JSON from stdin and sends a desktop notification
 # Usage: notify.sh <event_type>
 # For permission requests, shows Allow/Always/View buttons that send keystrokes to Terminal
+# For interview questions (Elicitation), shows a View button that focuses the terminal
 # Supported terminals: Terminal.app, Warp, iTerm2, VS Code, kitty
 
 EVENT="$1"
@@ -202,6 +203,37 @@ print(j.dumps({'msg': f'{tool}: {desc}', 'always': always}))
     elif echo "$RESPONSE" | grep -q "button returned:Always"; then
       send_keystroke "2"
     elif echo "$RESPONSE" | grep -q "button returned:View"; then
+      focus_tab
+    fi
+    ;;
+
+  elicitation)
+    # Claude is asking a question (e.g. AskUserQuestion) and is blocked until
+    # answered. There is nothing to auto-answer from a dialog -- the useful
+    # action is getting back to the terminal, so View is the only button.
+    if is_terminal_focused; then
+      exit 0
+    fi
+
+    MSG=$(echo "$INPUT" | /usr/bin/python3 -c "
+import sys, json
+try:
+    data = json.load(sys.stdin)
+except Exception:
+    data = {}
+msg = data.get('message') or data.get('question') or 'Claude is waiting for your answer.'
+if not isinstance(msg, str):
+    msg = json.dumps(msg)
+print(msg[:600])
+" 2>/dev/null || echo "Claude is waiting for your answer.")
+    [ -z "$MSG" ] && MSG="Claude is waiting for your answer."
+
+    # Escape double quotes and backslashes for osascript
+    MSG_ESC=$(echo "$MSG" | sed 's/\\/\\\\/g; s/"/\\"/g')
+
+    RESPONSE=$(osascript -e "display alert \"Claude Code\" message \"$MSG_ESC\" buttons {\"Dismiss\", \"View\"} default button \"View\" giving up after 30" 2>&1)
+
+    if echo "$RESPONSE" | grep -q "button returned:View"; then
       focus_tab
     fi
     ;;
