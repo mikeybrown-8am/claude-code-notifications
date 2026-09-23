@@ -89,14 +89,23 @@ EOF
 }
 
 # True while the target pane is still showing a Claude Code choice prompt.
-# Every permission dialog asks "Do you want to ...?" above a numbered option
-# list; requiring both keeps ordinary transcript text from matching.
+#
+# Keyed on the numbered option list alone. Also requiring the literal
+# "Do you want to " looked safer but silently ate every Allow click: that
+# wording is not universal -- plan mode renders "Would you like to proceed?",
+# and the trust and MCP prompts differ again -- and it varies by CLI version,
+# so the guard rejected panes that were plainly still prompting.
+#
+# A false positive here is cheap: send_keystroke sends a bare digit with no
+# Enter, so at worst a stray "1" lands in the composer where you can see it.
+# A false negative loses the click outright, so this errs toward sending.
 xirp_pane_awaiting_choice() {
-  local tail_text
+  local tail_text opts
   tail_text=$(tmux capture-pane -p -t "$XIRP_PANE" -S -25 2>/dev/null) || return 1
-  printf '%s' "$tail_text" | grep -qE 'Do you want to ' || return 1
-  printf '%s' "$tail_text" | grep -qE '^[[:space:]]*.?[[:space:]]*2\.[[:space:]]' || return 1
-  return 0
+  # `[^0-9]*` rather than `.?` for the leading caret: the selection marker is
+  # multi-byte and a single `.` will not span it outside a UTF-8 locale.
+  opts=$(printf '%s' "$tail_text" | grep -cE '^[^0-9]*[12]\.[[:space:]]')
+  [ "${opts:-0}" -ge 2 ]
 }
 
 send_keystroke() {
